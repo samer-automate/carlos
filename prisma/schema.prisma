@@ -1,0 +1,142 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Habit {
+  id          String            @id @default(cuid())
+  name        String
+  description String?
+  frequency   String            @default("daily")
+  targetDays  String?
+  color       String?
+  icon        String?
+  archived    Boolean           @default(false)
+  createdAt   DateTime          @default(now())
+  completions HabitCompletion[]
+  blocks      BlockHabit[]
+}
+
+model HabitCompletion {
+  id        String   @id @default(cuid())
+  habitId   String
+  habit     Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  date      DateTime
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@unique([habitId, date])
+}
+
+model Exercise {
+  id               String            @id @default(cuid())
+  name             String
+  category         String?
+  notes            String?
+  sets             WorkoutSet[]
+  routineExercises RoutineExercise[]
+}
+
+model WorkoutSession {
+  id        String            @id @default(cuid())
+  date      DateTime          @default(now())
+  name      String?
+  notes     String?
+  duration  Int?
+  sets      WorkoutSet[]
+  blockLogs BlockWorkoutLog[]
+}
+
+model WorkoutSet {
+  id         String         @id @default(cuid())
+  sessionId  String
+  session    WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  exerciseId String
+  exercise   Exercise       @relation(fields: [exerciseId], references: [id])
+  setNumber  Int
+  reps       Int?
+  weight     Float?
+  duration   Int?
+  notes      String?
+}
+
+model Routine {
+  id          String            @id @default(cuid())
+  name        String
+  description String?
+  color       String?
+  createdAt   DateTime          @default(now())
+  exercises   RoutineExercise[]
+  schedules   RoutineSchedule[]
+  blocks      BlockRoutine[]
+}
+
+model RoutineExercise {
+  id           String   @id @default(cuid())
+  routineId    String
+  routine      Routine  @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  exerciseId   String
+  exercise     Exercise @relation(fields: [exerciseId], references: [id])
+  order        Int
+  targetSets   Int?
+  targetReps   Int?
+  targetWeight Float?
+  notes        String?
+}
+
+model RoutineSchedule {
+  id        String  @id @default(cuid())
+  routineId String
+  routine   Routine @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  dayOfWeek Int
+}
+
+model Block {
+  id          String            @id @default(cuid())
+  name        String
+  description String?
+  color       String?
+  createdAt   DateTime          @default(now())
+  habits      BlockHabit[]
+  routines    BlockRoutine[]
+  schedules   BlockSchedule[]
+  workoutLogs BlockWorkoutLog[]
+}
+
+model BlockHabit {
+  id      String @id @default(cuid())
+  blockId String
+  block   Block  @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  habitId String
+  habit   Habit  @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  order   Int    @default(0)
+}
+
+model BlockRoutine {
+  id        String  @id @default(cuid())
+  blockId   String
+  block     Block   @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  routineId String
+  routine   Routine @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  order     Int     @default(0)
+}
+
+model BlockSchedule {
+  id        String @id @default(cuid())
+  blockId   String
+  block     Block  @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  dayOfWeek Int
+}
+
+model BlockWorkoutLog {
+  id        String         @id @default(cuid())
+  blockId   String
+  block     Block          @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  sessionId String
+  session   WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  date      DateTime       @default(now())
+}
